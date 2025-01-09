@@ -22,6 +22,9 @@ class ScraperController extends Controller
 
     public function scrapeAndUpload(Request $request)
     {
+        // Increase script execution time
+        set_time_limit(300); // 5 minutes
+
         try {
             $request->validate([
                 'reddit_url' => 'required|url',
@@ -64,21 +67,18 @@ class ScraperController extends Controller
                     $currentFolderId = $this->googleDriveService->ensureFolderExists($folderName, $folderId);
                 }
 
-                foreach ($content['media_urls'] as $mediaUrl) {
-                    try {
-                        // Validate media URL
-                        if (!filter_var($mediaUrl, FILTER_VALIDATE_URL)) {
-                            Log::warning('Invalid media URL skipped', ['url' => $mediaUrl]);
-                            continue;
-                        }
+                $mediaUrls = $content['media_urls'];
+                $mediaChunks = array_chunk($mediaUrls, 10); // Process in chunks of 10
 
-                        // Log the media URL
-                        Log::info('Processing media URL: ' . $mediaUrl);
+                foreach ($mediaChunks as $chunk) {
+                    $responses = Http::pool(fn ($pool) => array_map(
+                        fn ($url) => $pool->as($url)->withOptions(['timeout' => 60])->retry(3, 200)->get($url),
+                        $chunk
+                    ));
 
-                        // Download media with retry logic
-                        $response = Http::withOptions(['timeout' => 60])->retry(3, 100)->get($mediaUrl);
+                    foreach ($responses as $url => $response) {
                         if (!$response->successful()) {
-                            Log::error('Failed to download media', ['url' => $mediaUrl, 'status' => $response->status()]);
+                            Log::error('Failed to download media', ['url' => $url]);
                             continue;
                         }
 
@@ -86,23 +86,12 @@ class ScraperController extends Controller
                         $fileSize = strlen($fileContent);
                         $totalFileSize += $fileSize;
 
-                        // Determine file extension dynamically
-                        $extension = pathinfo(parse_url($mediaUrl, PHP_URL_PATH), PATHINFO_EXTENSION);
-                        if (empty($extension)) {
-                            $mimeType = $response->header('Content-Type');
-                            $extension = $this->getExtensionFromMimeType($mimeType);
-                        }
-                        $extension = $extension ?: 'jpg';
-
-                        // Temporary file storage
+                        $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'jpg';
                         $tempFile = tempnam(sys_get_temp_dir(), 'reddit_');
                         file_put_contents($tempFile, $fileContent);
 
-                        // Safe filename generation
                         $safeTitle = Str::slug($content['title']);
                         $fileName = substr($safeTitle, 0, 100) . '_' . Str::random(8) . '.' . $extension;
-
-                        Log::info('Uploading file to Google Drive', ['fileName' => $fileName, 'fileSize' => $fileSize]);
 
                         $uploadResult = $this->googleDriveService->uploadFileFromLocalPath($tempFile, $fileName, $currentFolderId);
 
@@ -111,17 +100,12 @@ class ScraperController extends Controller
                         if (!empty($uploadResult['file_id'])) {
                             $uploadedFiles[] = [
                                 'title' => $content['title'],
-                                'original_url' => $mediaUrl,
+                                'original_url' => $url,
                                 'drive_url' => $uploadResult['url'],
                                 'file_id' => $uploadResult['file_id'],
                                 'upvotes' => $content['upvotes'],
                             ];
                         }
-                    } catch (\Exception $e) {
-                        Log::error('Failed to process or upload media', [
-                            'url' => $mediaUrl,
-                            'error' => $e->getMessage(),
-                        ]);
                     }
                 }
             }
@@ -137,18 +121,5 @@ class ScraperController extends Controller
             ]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
-    }
-
-    private function getExtensionFromMimeType($mimeType)
-    {
-        $mimeMap = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/gif' => 'gif',
-            'video/mp4' => 'mp4',
-            'video/webm' => 'webm',
-
-        ];
-        return $mimeMap[$mimeType] ?? null;
     }
 }
