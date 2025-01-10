@@ -36,7 +36,9 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input, button {
+        input[type="url"],
+        input[type="text"],
+        button {
             margin-bottom: 15px;
             padding: 10px;
             font-size: 1rem;
@@ -51,6 +53,42 @@
         }
         button:hover {
             background-color: #45a049;
+        }
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        .slider {
+            width: 100%;
+            margin: 10px 0;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: #ddd;
+            border-radius: 5px;
+            outline: none;
+            transition: background 0.3s;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider-value {
+            text-align: center;
+            font-weight: bold;
         }
         .alert {
             margin-top: 20px;
@@ -92,7 +130,11 @@
             <input type="url" id="reddit_url" name="reddit_url" required placeholder="https://www.reddit.com/r/kittens/" />
 
             <label for="minimum_upvotes">Minimum Upvotes:</label>
-            <input type="number" id="minimum_upvotes" name="minimum_upvotes" value="50" min="1" />
+            <div class="slider-container">
+                <input type="range" id="minimum_upvotes" name="minimum_upvotes" class="slider" min="1" max="500" value="50"
+                    oninput="updateSliderValue(this.value)" />
+                <div class="slider-value" id="sliderValue">50 Upvotes</div>
+            </div>
 
             <label for="keywords">Keywords (comma-separated):</label>
             <input type="text" id="keywords" name="keywords" placeholder="e.g., kittens, rescue" />
@@ -128,6 +170,10 @@
             let isStopped = false;
             let totalFileSize = 0;
             const csrfToken = '{{ csrf_token() }}';
+
+            function updateSliderValue(value) {
+            document.getElementById('sliderValue').textContent = `${value} Upvotes`;
+        }
 
             function showScrapingModal(event) {
                 event.preventDefault();

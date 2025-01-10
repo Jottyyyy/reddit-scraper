@@ -61,6 +61,11 @@ class ScraperController extends Controller
             $totalFileSize = 0;
 
             foreach ($scrapedContent as $content) {
+                // Check if the content meets the minimum upvote requirement
+                if ($content['upvotes'] < $minimumUpvotes) {
+                    continue; // Skip to the next content if it doesn't meet the upvote requirement
+                }
+
                 $currentFolderId = $folderId;
                 if ($createFolders) {
                     $folderName = Str::slug($content['title']);
