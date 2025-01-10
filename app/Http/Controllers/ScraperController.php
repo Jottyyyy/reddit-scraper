@@ -22,8 +22,7 @@ class ScraperController extends Controller
 
     public function scrapeAndUpload(Request $request)
     {
-        // Increase script execution time
-        set_time_limit(300); // 5 minutes
+        set_time_limit(300);
 
         try {
             $request->validate([
@@ -61,9 +60,8 @@ class ScraperController extends Controller
             $totalFileSize = 0;
 
             foreach ($scrapedContent as $content) {
-                // Check if the content meets the minimum upvote requirement
                 if ($content['upvotes'] < $minimumUpvotes) {
-                    continue; // Skip to the next content if it doesn't meet the upvote requirement
+                    continue;
                 }
 
                 $currentFolderId = $folderId;
@@ -73,7 +71,7 @@ class ScraperController extends Controller
                 }
 
                 $mediaUrls = $content['media_urls'];
-                $mediaChunks = array_chunk($mediaUrls, 10); // Process in chunks of 10
+                $mediaChunks = array_chunk($mediaUrls, 10);
 
                 foreach ($mediaChunks as $chunk) {
                     $responses = Http::pool(fn ($pool) => array_map(

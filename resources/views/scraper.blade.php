@@ -6,50 +6,58 @@
     <title>Reddit Scraper & Google Drive Uploader</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f9fafc;
+            background-color: #f0f4f8;
         }
         .container {
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            max-width: 400px;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
             width: 100%;
         }
         h1 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
+            font-size: 1.75rem;
+            margin-bottom: 25px;
             text-align: center;
+            color: #333;
         }
         form {
             display: flex;
             flex-direction: column;
         }
         label {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: bold;
+            color: #555;
         }
         input[type="url"],
         input[type="text"],
         button {
-            margin-bottom: 15px;
-            padding: 10px;
+            margin-bottom: 20px;
+            padding: 12px;
             font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+        }
+        input[type="url"]:focus,
+        input[type="text"]:focus {
+            border-color: #4CAF50;
         }
         button {
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
             font-size: 1rem;
+            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #45a049;
@@ -57,7 +65,7 @@
         .slider-container {
             display: flex;
             flex-direction: column;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         .slider {
             width: 100%;
@@ -89,11 +97,13 @@
         .slider-value {
             text-align: center;
             font-weight: bold;
+            color: #333;
         }
         .alert {
             margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
         }
         .alert-success {
             background-color: #d4edda;
@@ -102,6 +112,29 @@
         .alert-error {
             background-color: #f8d7da;
             color: #721c24;
+        }
+        #scrapingModal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+        #scrapingModal h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        #scrapingModal p {
+            margin-bottom: 20px;
+            color: #555;
+        }
+        #scrapingModal button {
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -158,7 +191,7 @@
         </form>
 
         {{-- Scraping Modal --}}
-        <div id="scrapingModal" style="display:none;">
+        <div id="scrapingModal">
             <h2>Scraping...</h2>
             <p>File Size: <span id="fileSize">0</span> MB</p>
             <button onclick="pauseScraping()">Pause</button>
@@ -172,8 +205,8 @@
             const csrfToken = '{{ csrf_token() }}';
 
             function updateSliderValue(value) {
-            document.getElementById('sliderValue').textContent = `${value} Upvotes`;
-        }
+                document.getElementById('sliderValue').textContent = `${value} Upvotes`;
+            }
 
             function showScrapingModal(event) {
                 event.preventDefault();
